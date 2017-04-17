@@ -735,3 +735,7 @@ void showhelpinfo(char *s) {
   cout<<"         "<<"-o  output file name"<<endl;
   cout<<"example: "<<s<<" -i <input file name> -o <output file prefix>"<<endl;
 }
+
+void myNewFunction() {
+	cout << "I do cool stuff\n\n";
+}
