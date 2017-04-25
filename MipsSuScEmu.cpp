@@ -53,6 +53,7 @@ void disassemble(const string& filename, const string& outfile);
 string interpret(const int& i);
 void status(const int& i, ofstream& out);
 void showhelpinfo(char *s);
+void writeBack();
 
 int main(int argc, char* argv[]) {
 	char tmp;
@@ -101,6 +102,88 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+
+void writeBack() {
+    //check if post alu buffer is ready to write back
+    if (postAlu.valid) {
+        r[postAlu.dest] = postAlu.data;
+        postAlu.valid = false;
+        postAlu.dest = 0;
+        postAlu.data = 0;
+    }
+    //check if post mem buffer is ready to write back
+    if (postMem.valid) {
+        r[postMem.dest] = postMem.data;
+        postMem.valid = false;
+        postMem.dest = 0;
+        postMem.data = 0;
+    }
+}
+
+void ALU() {
+    //checks if there is an instruction ready in the first buffer slot
+    if (preAlu[0].valid) {
+        ALUIssue(preAlu[0].instruction);
+    }
+    preAlu[0] = preAlu[1];
+    preAlu[1].valid = false;
+    preAlu[1].instruction = 0;
+}
+
+void ALUIssue(const int& instruction) {
+    int op, rs, rt, rd, imm, shift, aluOp;
+    op = instruction << 1;
+    op >>= 27;
+    rs = instruction << 6;
+    rs >>= 27;
+    rt = instruction << 11;
+    rt >>= 27;
+    rd = instruction << 16;
+    rd >>= 27;
+    imm = instruction << 16;
+    imm >>= 16;
+    shift = instruction << 21;
+    shift >>= 27;
+    aluOp = instruction << 26;
+    aluOp >>= 26;
+
+    if (op == 0) {
+        op = aluOp;
+    }
+
+    switch (op) {
+        //ADD
+        case 6'b100000:
+            break;
+        //ADDI
+        case 5'b01000:
+            break;
+        //SUB
+        case 6'b100010:
+            break;
+        //SLL
+        case 6'b000000:
+            break;
+        //SRL
+        case 6'b000010:
+            break;
+        //MUL
+        case 5'b11100:
+            break;
+        //AND
+        case 6'b100101:
+            break;
+        //OR
+        case 6'b100100:
+            break;
+        //MOVZ?
+        case 6'b001010:
+            break;
+
+    }
+
+}
+
 
 //should be able to use as is
 void disassemble(const string& filename, const string& outfilename) {
