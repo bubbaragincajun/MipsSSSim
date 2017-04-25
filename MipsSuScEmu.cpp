@@ -13,22 +13,22 @@ struct CacheLine {
     bool dirty;
     int tag;
     int[2] data;
-}
+};
 
 struct CacheSet {
     bool LRU;
     CacheLine[2] line;
-}
+};
 
 struct PostBuff {
     bool valid;
     int dest, data;
-}
+};
 
 struct PreBuff {
     bool valid;
     int instruction;
-}
+};
 
 
 //Global register/memory declarations
@@ -151,7 +151,7 @@ void ALUIssue(const int& instruction) {
         op = aluOp;
     }
 
-    switch (op) {
+    /*switch (op) {
         //ADD
         case 6'b100000:
             break;
@@ -180,7 +180,7 @@ void ALUIssue(const int& instruction) {
         case 6'b001010:
             break;
 
-    }
+    }*/
 
 }
 
@@ -245,6 +245,8 @@ string interpret(const int& i) {
 
 //edit this to match the output for the current project
 void status(const int& i, ofstream& out) {
+	//old
+	/*
 	out << "====================\n";
 	out << "cycle:" << cycle << " " << pc <<"\t" << mipsReturn(i) << "\n\n";
 	out << "registers:\n";
@@ -265,6 +267,81 @@ void status(const int& i, ofstream& out) {
 		out << r[i] << "\t";
 	}
 	out << "\n\ndata:\n";
+	int numData = (sp - memstart)/4;
+	int lines = numData/8;	
+	int offset = memstart;
+
+	for (int i = 0; i < lines-1; i++) {
+		out << offset << ": ";
+		for (int j = (offset-96)/4; j < (offset-96)/4 + 8; j++) {
+			out << "\t" << memarray[j] ;
+		}
+		out << "\n";
+		offset += 32;
+	}
+	int numLeft = (numData<8)? numData: numData - (lines-1)*8;
+	out << offset << ": ";
+	for (int i = (offset-96)/4; i < (offset-96)/4 + numLeft; i++) {
+		out << "\t" << memarray[i];
+	}
+	out << "\n\n";
+	*/
+
+	//new
+	out << "--------------------\n";
+	out << "Cycle[" << cycle << "]:\n\n";
+	
+	//[re issue buffer]
+	out << "Pre-Issue Buffer:\n";
+	out << "\tEntry 0:\t" << "[//instruction here]\n";
+	out << "\tEntry 1:\t" << "[//instruction here]\n";
+	out << "\tEntry 2:\t" << "[//instruction here]\n";
+	out << "\tEntry 3:\t" << "[//instruction here]\n";
+	out << "Pre_ALU Queue:\n";
+	out << "\tEntry 0:\t" << "[//instruction here]\n";
+	out << "\tEntry 1:\t" << "[//instruction here]\n";
+	out << "Post_ALU Queue:\n";
+	out << "\tEntry 0:\t" << "[//instruction here]\n";
+	out << "Pre_MEM Queue:\n";
+	out << "\tEntry 0:\t" << "[//instruction here]\n";
+	out << "\tEntry 1:\t" << "[//instruction here]\n";
+	out << "Post_MEM Queue:\n";
+	out << "\tEntry 0:\t" << "[//instruction here]\n\n";
+
+	out << "Registers\n";
+	out << "R00: ";
+	for (int i = 0; i < 8; i++) {
+		out << "\t" << r[i];
+	}
+	out << "\nR08: \t";
+	for (int i = 8; i < 16; i++) {
+		out << r[i] << "\t";
+	}
+	out << "\nR16: \t";
+	for (int i = 16; i < 24; i++) {
+		out << r[i] << "\t";
+	}
+	out << "\nR24: \t";
+	for (int i = 24; i < 32; i++) {
+		out << r[i] << "\t";
+	}
+	out << "\n\n";
+
+	cout << "Cache\n";
+	out << "Set 0: LRU=[//insert LRU Value here]\n";
+	out << "\tEntry 0: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "\tEntry 1: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "Set 1: LRU=[//insert LRU Value here]\n";
+	out << "\tEntry 0: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "\tEntry 1: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "Set 2: LRU=[//insert LRU Value here]\n";
+	out << "\tEntry 0: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "\tEntry 1: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "Set 3: LRU=[//insert LRU Value here]\n";
+	out << "\tEntry 0: [(valid bit, dirty bit, int(tag))<word0,word1>]\n";
+	out << "\tEntry 1: [(valid bit, dirty bit, int(tag))<word0,word1>]\n\n";
+
+	out << "Data:\n";
 	int numData = (sp - memstart)/4;
 	int lines = numData/8;	
 	int offset = memstart;
