@@ -12,17 +12,17 @@ struct CacheLine {
     bool valid;
     bool dirty;
     int tag;
-    int[2] data;
+    int data[2];
 };
 
 struct CacheSet {
     bool LRU;
-    CacheLine[2] line;
+    CacheLine line[2];
 };
 
 struct PostBuff {
     bool valid;
-    int dest, data;
+    int dest, data, instruction;
 };
 
 struct PreBuff {
@@ -40,20 +40,23 @@ struct PreBuff {
 //Something like that?
 int memarray[100];
 int r[32];
-CacheSet[4] cache;
+CacheSet cache[4];
 PostBuff postAlu;
 PostBuff postMem;
-PreBuff[2] preAlu;
-PreBuff[2] preMem;
-PreBuff[4] preIssue;
+PreBuff preAlu[2];
+PreBuff preMem[2];
+PreBuff preIssue[4];
 int sp, pc, memstart, cycle;
 
 string mipsReturn(const int& i);
 void disassemble(const string& filename, const string& outfile);
 string interpret(const int& i);
 void status(const int& i, ofstream& out);
-void showhelpinfo(char *s);
+void showhelpinfo(char* s);
 void writeBack();
+void ALU();
+void ALUIssue(const int& instruction);
+
 
 int main(int argc, char* argv[]) {
 	char tmp;
@@ -90,7 +93,7 @@ int main(int argc, char* argv[]) {
 			break;
 		}
 	}
-	if (!((infile != "") && (outfile != ""))){
+	if ((infile == "") && (outfile == "")){
 		cout << "Too few arguments. Please execute: '" << argv[0] << " -h' to see help info\n";
 	}
 	else {
@@ -151,36 +154,36 @@ void ALUIssue(const int& instruction) {
         op = aluOp;
     }
 
-    /*switch (op) {
+    switch (op) {
         //ADD
-        case 6'b100000:
+        case 32:
             break;
         //ADDI
-        case 5'b01000:
+        case 8:
             break;
         //SUB
-        case 6'b100010:
+        case 34:
             break;
         //SLL
-        case 6'b000000:
+        case 0:
             break;
         //SRL
-        case 6'b000010:
+        case 2:
             break;
         //MUL
-        case 5'b11100:
+        case 28:
             break;
         //AND
-        case 6'b100101:
+        case 37:
             break;
         //OR
-        case 6'b100100:
+        case 36:
             break;
         //MOVZ?
-        case 6'b001010:
+        case 10:
             break;
 
-    }*/
+    }
 
 }
 
@@ -551,4 +554,13 @@ string mipsReturn(const int& command) {
 	}
 	
 	return ss.str();
+}
+
+
+void showhelpinfo(char *s) {
+  cout<<"Usage:   "<<s<<" [-option] [argument]"<<endl;
+  cout<<"option:  "<<"-h  show help information"<<endl;
+  cout<<"         "<<"-i  input file name"<<endl;
+  cout<<"         "<<"-o  output file name"<<endl;
+  cout<<"example: "<<s<<" -i <input file name> -o <output file prefix>"<<endl;
 }
