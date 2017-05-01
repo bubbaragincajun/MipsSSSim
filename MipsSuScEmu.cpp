@@ -58,15 +58,15 @@ void ALU();
 void ALUIssue(const int& instruction);
 
 //strings or ints???
-bool getIsValid(const int& instruction);
-string getOP(const int& instruction);
-string getRS(const int& instruction);
-string getRT(const int& instruction);
-string getRD(const int& instruction);
-string getSA(const int& instruction);
-string getIMM(const int& instruction);
-string getTAR(const int& instruction);
-string getFUNC(const int& instruction);
+string getIsValid(const int& command);
+string getOP(const int& command);
+string getRS(const int& command);
+string getRT(const int& command);
+string getRD(const int& command);
+string getSA(const int& command);
+string getIMM(const int& command);
+string getTAR(const int& command);
+string getFUNC(const int& command);
  
 
 int main(int argc, char* argv[]) {
@@ -610,10 +610,15 @@ string mipsReturn(const int& command) {
 	return ss.str();
 }
 
-bool getIsValid(const int& instruction) {
-	return instruction[31];
+string getIsValid(const int& command) {
+	bitset<32> instruction(command);
+	bitset<1> valid;
+
+	valid[0] = instruction[31];
+	return valid.to_string();
 }
-int getOP(const int& instruction) {
+string getOP(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> op;
 
 	for (int i = 4; i >= 0; i--) {
@@ -622,7 +627,8 @@ int getOP(const int& instruction) {
 
 	return op.to_string();
 }
-int getRS(const int& instruction) {
+string getRS(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> rs;
 
 	for (int i = 4; i >= 0; i--) {
@@ -631,7 +637,8 @@ int getRS(const int& instruction) {
 
 	return rs.to_string();
 }
-int getRT(const int& instruction) {
+string getRT(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> rt;
 
 	for (int i = 4; i >= 0; i--) {
@@ -640,7 +647,8 @@ int getRT(const int& instruction) {
 
 	return rt.to_string();
 }
-int getRD(const int& instruction) {
+string getRD(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> rd;
 
 	for (int i = 4; i >= 0; i--) {
@@ -649,7 +657,8 @@ int getRD(const int& instruction) {
 
 	return rd.to_string();
 }
-int getSA(const int& instruction) {
+string getSA(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> sa;
 
 	for (int i = 4; i >= 0; i--) {
@@ -658,7 +667,8 @@ int getSA(const int& instruction) {
 
 	return sa.to_string();
 }
-int getIMM(const int& instruction) {
+string getIMM(const int& command) {
+	bitset<32> instruction(command);
 	bitset<16> imm;
 
 	for (int i = 15; i >= 0; i--) {
@@ -667,7 +677,8 @@ int getIMM(const int& instruction) {
 
 	return imm.to_string();
 }
-int getTAR(const int& instruction) {
+string getTAR(const int& command) {
+	bitset<32> instruction(command);
 	bitset<26> tar;
 
 	for (int i = 25; i >= 0; i--) {
@@ -676,7 +687,8 @@ int getTAR(const int& instruction) {
 
 	return tar.to_string();
 }
-int getFUNC(const int& instruction) {
+string getFUNC(const int& command) {
+	bitset<32> instruction(command);
 	bitset<5> func;
 
 	for (int i = 5; i >= 0; i--) {
