@@ -124,6 +124,7 @@ void writeBack() {
         postAlu.valid = false;
         postAlu.dest = 0;
         postAlu.data = 0;
+		postAlu.instruction = 0;
     }
     //check if post mem buffer is ready to write back
     if (postMem.valid) {
@@ -131,6 +132,7 @@ void writeBack() {
         postMem.valid = false;
         postMem.dest = 0;
         postMem.data = 0;
+		postMem.instruction = 0;
     }
 }
 
@@ -145,7 +147,7 @@ void ALU() {
 }
 
 void ALUIssue(const int& instruction) {
-    int op, rs, rt, rd, imm, shift, aluOp;
+    int op, rs, rt, rd, imm, shift, aluOp, result, dest;
     op = instruction << 1;
     op >>= 27;
     rs = instruction << 6;
@@ -165,39 +167,114 @@ void ALUIssue(const int& instruction) {
         op = aluOp;
     }
 
+
     switch (op) {
         //ADD
         case 32:
+			result = r[rs] + r[rt];
+			dest = rd;
             break;
         //ADDI
         case 8:
+			result = r[rs] + imm;
+			dest = rt;
             break;
         //SUB
         case 34:
+			result = r[rs] - r[rt];
+			dest = rd;
             break;
         //SLL
         case 0:
+			result = r[rt] << shift;
+			dest = rd;
             break;
         //SRL
         case 2:
+			result = r[rt] >> shift;
+			dest = rd;
             break;
         //MUL
         case 28:
-            break;
+			result = r[rs] * r[rt];
+			dest = rd;
+			break;
         //AND
         case 37:
+			result = r[rs] & r[rt];
+			dest = rd;
             break;
         //OR
         case 36:
+			result = r[rs] | r[rt];
+			dest = rd;
             break;
         //MOVZ?
         case 10:
+			result = r[rd];
+			dest = rd;
+			if (r[rt]==0) {
+				result = r[rs];
+			}
             break;
-
     }
+
+	postAlu.valid = true;
+	postAlu.instruction = instruction;
+	postAlu.dest = dest;
+	postAlu.data = result;
 
 }
 
+void MEM() {
+	if (preMem[0].valid) {
+		int command, op, rs, rt, imm, addr, data;
+		command = preMem[0].instruction;
+		op = command << 1;
+		op >>= 27;
+		rs = instruction << 6;
+    	rs >>= 27;
+    	rt = instruction << 11;
+    	rt >>= 27; 
+		imm = instruction << 16;
+   		imm >>= 14;
+		addr = imm + r[rs];
+		if (op == 3) {
+			if(cacheRead(addr, data)) {
+				postMem.valid = true;
+				postMem.data = data;
+				postMem.instruction = command;
+				postMem.dest = rt;
+				preMem[0] = preMem[1];
+				preMem[1].valid = false;
+				preMem[1].instruction = 0;
+			}
+		}
+		else {
+			if (cacheWrite(addr, r[rt])) {
+				preMem[0] = preMem[1];
+				preMem[1].valid = false;
+				preMem[1].instruction = 0;
+			}
+		}
+
+		
+	}
+	else {
+		preMem[0] = preMem[1];
+		preMem[1].valid = false;
+		preMem[1].instruction = 0;
+	}
+}
+
+
+bool cacheRead(const int& addr, int& data) {
+
+}
+
+bool cacheWrite(const int& addr, const int& data) {
+
+}
 
 //should be able to use as is
 void disassemble(const string& filename, const string& outfilename) {
