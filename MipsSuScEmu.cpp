@@ -332,7 +332,59 @@ bool cacheRead(const int& addr, int& data) {
 }
 
 bool cacheWrite(const int& addr, const int& data) {
+	int tag, word, line;
 
+	tag = addr >> 6;
+	word = addr << 28;
+	word = word >> 30;
+	line = addr << 26;
+	line = line >> 30;
+
+	bool success = false;
+	CacheSet* cachePtr = &cache[line];
+
+	if (cachePtr->line[0].valid) { //checking if in set 0
+		CacheLine* linePtr = &cachePtr->line[0];
+		if (linePtr->tag == tag) {
+			linePtr->data[word] = data;
+			linePtr->dirty = true;
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else if(cachePtr->line[1].valid) { //checking if in set 1
+		CacheLine* linePtr = &cachePtr->line[1];
+		if (linePtr->tag == tag) {
+			linePtr->data[word] = data;
+			linePtr->dirty = true;
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else {
+		cachePtr = &nextCache[line];
+		int set = cachePtr->LRU? 1: 0;
+		CacheLine* linePtr = &cachePtr->line[set];
+		linePtr->valid = true;
+		linePtr->dirty = false;
+		int index1, index2;
+		if (word == 0) {
+			index1 = (addr-96)/4;
+			index2 = (addr-92)/4;
+		}
+		else {
+			index1 = (addr-100)/4;
+			index2 = (addr-96)/4;
+		}
+		linePtr->data[0] = memarray[index1];
+		linePtr->data[1] = memarray[index2];
+		cachePtr->LRU = !cachePtr->LRU;
+
+		linePtr = nullptr;
+		success = false;
+	}
+	cachePtr = nullptr;
+	return success;
 }
 
 //should be able to use as is
