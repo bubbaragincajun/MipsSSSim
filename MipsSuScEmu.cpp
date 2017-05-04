@@ -59,6 +59,7 @@ void writeBack();
 void ALU();
 void ALUIssue(const int& instruction);
 void IF();
+void Issue();
 int pibIndex();
 bool buffStall(const int& addr);
 bool buffFull ();
@@ -669,20 +670,20 @@ void status(ofstream& out) {
 
 	//[re issue buffer]
 	out << "Pre-Issue Buffer:\n";
-	out << "\tEntry 0:\t" << "[" << ((preIssue[0].valid)? mipsReturn(preIssue[0].instruction): "") << "]\n";
-	out << "\tEntry 1:\t" << "[" << ((preIssue[1].valid)? mipsReturn(preIssue[1].instruction): "") << "]\n";
-	out << "\tEntry 2:\t" << "[" << ((preIssue[2].valid)? mipsReturn(preIssue[2].instruction): "") << "]\n";
-	out << "\tEntry 3:\t" << "[" << ((preIssue[3].valid)? mipsReturn(preIssue[3].instruction): "") << "]\n";
+	out << "\tEntry 0:\t" << ((preIssue[0].valid)? ("[" + mipsReturn(preIssue[0].instruction) + "]") : "") << "\n";
+	out << "\tEntry 1:\t" << ((preIssue[1].valid)? ("[" + mipsReturn(preIssue[1].instruction) + "]") : "") << "\n";
+	out << "\tEntry 2:\t" << ((preIssue[2].valid)? ("[" + mipsReturn(preIssue[2].instruction) + "]") : "") << "\n";
+	out << "\tEntry 3:\t" << ((preIssue[3].valid)? ("[" + mipsReturn(preIssue[3].instruction) + "]") : "") << "\n";
 	out << "Pre_ALU Queue:\n";
-	out << "\tEntry 0:\t" << "[" << ((preAlu[0].valid)? mipsReturn(preAlu[0].instruction): "") << "]\n";
-	out << "\tEntry 1:\t" << "[" << ((preAlu[1].valid)? mipsReturn(preAlu[1].instruction): "") << "]\n";
+	out << "\tEntry 0:\t" << ((preAlu[0].valid)? ("[" + mipsReturn(preAlu[0].instruction) + "]") : "") << "]\n";
+	out << "\tEntry 1:\t" << ((preAlu[1].valid)? ("[" + mipsReturn(preAlu[1].instruction) + "]") : "") << "]\n";
 	out << "Post_ALU Queue:\n";
-	out << "\tEntry 0:\t" << "[" << ((postAlu.valid)? mipsReturn(postAlu.instruction): "") << "]\n";
+	out << "\tEntry 0:\t" << ((postAlu.valid)? ("[" + mipsReturn(postAlu.instruction) + "]") : "") << "]\n";
 	out << "Pre_MEM Queue:\n";
-	out << "\tEntry 0:\t" << "[" << ((preMem[0].valid)? mipsReturn(preMem[0].instruction): "") << "]\n";
-	out << "\tEntry 1:\t" << "[" << ((preMem[1].valid)? mipsReturn(preMem[1].instruction): "") << "]\n";
+	out << "\tEntry 0:\t" << ((preMem[0].valid)? ("[" + mipsReturn(preMem[0].instruction) + "]") : "") << "]\n";
+	out << "\tEntry 1:\t" << ((preMem[1].valid)? ("[" + mipsReturn(preMem[1].instruction) + "]") : "") << "]\n";
 	out << "Post_MEM Queue:\n";
-	out << "\tEntry 0:\t" << "[" << ((postMem.valid)? mipsReturn(postMem.instruction): "") << "]\n";
+	out << "\tEntry 0:\t" << ((postMem.valid)? ("[" + mipsReturn(postMem.instruction) + "]") : "") << "]\n";
 
 	out << "Registers\n";
 	out << "R00: ";
