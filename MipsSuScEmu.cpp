@@ -27,11 +27,8 @@ struct PostBuff {
 
 struct PreBuff {
     bool valid;
-<<<<<<< HEAD
     int dest, instruction;
-=======
     int instruction, dest;
->>>>>>> 344f82afae5c41d47bd25d3b19de20508cf3f065
 };
 
 
@@ -62,18 +59,14 @@ void showhelpinfo(char* s);
 void writeBack();
 void ALU();
 void ALUIssue(const int& instruction);
-<<<<<<< HEAD
 void IF();
 int pibIndex();
 bool buffStall(const int& addr);
 bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
-=======
 void MEM();
 bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
-
->>>>>>> 344f82afae5c41d47bd25d3b19de20508cf3f065
 
 string getIsValid(const int& command);
 string getOP(const int& command);
