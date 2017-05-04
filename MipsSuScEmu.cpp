@@ -1091,7 +1091,7 @@ void IF() {
 
 	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1)
 		switchp = 1;
-	else if ( /* next i is NOP */ getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000")
+	else if ( /* next i is NOP or invalid*/ (getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") || !getIsValid(data))
 		switchp = 2;
 	else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001")
 		switchp = 3;
@@ -1101,10 +1101,6 @@ void IF() {
 		
 
 	switch (switchp) {
-		case 0: /* stall since break was read.  IF is no longer used */ 
-			return;
-		break;
-
 		case 1: /* cache miss or full PIB.  Has to wait  */
 			return;
 		break;
