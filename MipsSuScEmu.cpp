@@ -66,6 +66,8 @@ bool cacheWrite(const int& addr, const int& data);
 void MEM();
 bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
+void preIssueShift(const int& index);
+bool checkHazards(const int& index, const int& numReg, int* reg);
 
 string getIsValid(const int& command);
 string getOP(const int& command);
@@ -277,7 +279,6 @@ void MEM() {
 	}
 }
 
-<<<<<<< HEAD
 void Issue() {
 	bool ALUready(false), MEMready(false);
 	int ALUslot(0), MEMslot(0);
@@ -291,22 +292,188 @@ void Issue() {
 
 	//checks if preMem buffer is able to accept another instruction
 	if (!preMem[0].valid) {
-		Memready = true;
+		MEMready = true;
 	}
 	else if (!preMem[1].valid) {
 		MEMready = true;
 		MEMslot = 1;
 	}
 
+	int top = pibIndex();
 	int i = 0;
-	(while (ALUready || MEMready) && i < 4 ) {
-		
-	}
-	
 
+	if (top >= 0) {
+		while ((ALUready || MEMready) && i < 4 && preIssue[i].valid ) {
+			int command = preIssue[i].instruction;
+			string op = getOP(command);
+			string rs = getRS(command);
+			string rt = getRT(command);
+			string rd = getRD(command);
+			string shift = getSA(command);
+			string func = getFUNC(command);
+			string imm = getIMM(command);
+
+			bitset<5> s(rs), t(rt), d(rd);
+
+			//Mem instruction
+			if (op == "01011") {//sw
+				int reg[2] = {(int)s.to_ulong(), (int)t.to_ulong()};
+				if (!checkHazards(i,2,reg) && MEMready) {
+					preMem[MEMslot] = preIssue[i];
+					preIssueShift(i);
+					MEMready = false;
+				} else {
+					i++;
+				}
+			}
+			else if (op == "01011") { //lw
+				int reg[2] = {(int)s.to_ulong(), (int)t.to_ulong()};
+				if (!checkHazards(i,2,reg) && MEMready) { //no hazards
+					preMem[MEMslot] = preIssue[i];
+					preIssueShift(i);
+					MEMready = false;
+				} else {
+					i++;
+				}				
+			}
+			else if (op == "00000" && func == "100000"){//add
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "01000"){//addi
+				int reg[2] = {(int)s.to_ulong(), (int)t.to_ulong()};
+				if (!checkHazards(i,2,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "100010") {//sub
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "000000") {//sll
+				int reg[2] = {(int)d.to_ulong(), (int)t.to_ulong()};
+				if (!checkHazards(i,2,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "000010") {//srl 
+				int reg[2] = {(int)d.to_ulong(), (int)t.to_ulong()};
+				if (!checkHazards(i,2,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "11000" && func == "000010") {//MUL
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "100101") {//and
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "100100") {//or
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+			else if (op == "00000" && func == "001010") {//movz
+				int reg[3] = {(int)s.to_ulong(), (int)t.to_ulong(), (int)d.to_ulong()};
+				if (!checkHazards(i,3,reg) && ALUready) {
+					preAlu[ALUslot] = preIssue[i];
+					preIssueShift(i);
+					ALUready = false;
+				}
+				else {
+					i++;
+				}
+			}
+		}
+	}
 }
-=======
->>>>>>> dc067a890703e5804d45218eec6bc11ad21c5e63
+
+void preIssueShift(const int& index) {
+	for (int i = index; i < 3; i++) {
+		preIssue[i] = preIssue[i+1];
+	}
+	preIssue[3].valid = false;
+	preIssue[3].instruction = 0;
+	preIssue[3].dest = 0;
+}
+
+bool checkHazards(const int& index, const int& numReg, int* reg) {
+	for (int i = 0; i < index; i++) {
+		for (int j = 0; j < numReg; j++) {
+			if (reg[j] == preIssue[i].dest) {
+				return true;
+			}
+		}
+	}
+
+	for (int i = 0; i < 2; i++) {
+		for (int j = 0; j < numReg; j++) {
+			if (preMem[i].dest == reg[j] || preAlu[i].dest == reg[j]) {
+				return true;
+			}
+		}
+	}
+
+	for (int i = 0; i < numReg; i++) {
+		if (postMem.dest == reg[i] || postAlu.dest == reg[i]) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool cacheRead(const int& addr, int& data) {
 	//get offsets for the cache
 
