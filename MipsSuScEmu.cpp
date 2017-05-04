@@ -70,6 +70,7 @@ bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
 void preIssueShift(const int& index);
 bool checkHazards(const int& index, const int& numReg, int* reg);
+void Issue();
 
 string getIsValid(const int& command);
 string getOP(const int& command);
@@ -140,6 +141,36 @@ int main(int argc, char* argv[]) {
 			}
 
 			status(fout);
+			for (int i = 0; i < 4; i++) {
+				cache[i].LRU = nextCache[i].LRU;
+				for (int j = 0; j < 2; j++) {
+					cache[i].line[j].valid = nextCache[i].line[j].valid;
+					cache[i].line[j].dirty = nextCache[i].line[j].dirty;
+					cache[i].line[j].tag = nextCache[i].line[j].tag;
+					for (int k = 0; k < 2; k++) {
+						cache[i].line[j].data[k] = nextCache[i].line[j].data[k];
+					}
+
+				}
+			}
+			cycle ++;
+			cout << "nextCache\n";
+	cout << "Set 0: LRU=[" << nextCache[0].LRU << "]\n";
+	cout << "\tEntry 0: [(" << nextCache[0].line[0].valid << ", " << nextCache[0].line[0].dirty << ", "<< nextCache[0].line[0].tag << ")<" << interpret(nextCache[0].line[0].data[0]) << ", " << interpret(nextCache[0].line[0].data[1]) << ">]\n";
+	cout << "\tEntry 1: [(" << nextCache[0].line[1].valid << ", " << nextCache[0].line[1].dirty << ", "<< nextCache[0].line[1].tag << ")<" << interpret(nextCache[0].line[1].data[0]) << ", " << interpret(nextCache[0].line[1].data[1]) << ">]\n";
+
+	cout << "Set 1: LRU=[" << nextCache[1].LRU << "]\n";
+	cout << "\tEntry 0: [(" << nextCache[1].line[0].valid << ", " << nextCache[1].line[0].dirty << ", "<< nextCache[1].line[0].tag << ")<" << interpret(nextCache[1].line[0].data[0]) << ", " << interpret(nextCache[1].line[0].data[1]) << ">]\n";
+	cout << "\tEntry 1: [(" << nextCache[1].line[1].valid << ", " << nextCache[1].line[1].dirty << ", "<< nextCache[1].line[1].tag << ")<" << interpret(nextCache[1].line[1].data[0]) << ", " << interpret(nextCache[1].line[1].data[1]);
+	cout << "Set 2: LRU=[" << nextCache[2].LRU << "]\n";
+	cout << "\tEntry 0: [(" << nextCache[2].line[0].valid << ", " << nextCache[2].line[0].dirty << ", "<< nextCache[2].line[0].tag << ")<" << interpret(nextCache[2].line[0].data[0]) << ", " << interpret(nextCache[2].line[0].data[1]) << ">]\n";
+	cout << "\tEntry 1: [(" << nextCache[2].line[1].valid << ", " << nextCache[2].line[1].dirty << ", "<< nextCache[2].line[1].tag << ")<" << interpret(nextCache[2].line[1].data[0]) << ", " << interpret(nextCache[2].line[1].data[1]) << ">]\n";
+
+	cout << "Set 3: LRU=[" << nextCache[3].LRU << "]\n";
+	cout << "\tEntry 0: [(" << nextCache[3].line[0].valid << ", " << nextCache[3].line[0].dirty << ", "<< nextCache[3].line[0].tag << ")<" << interpret(nextCache[3].line[0].data[0]) << ", " << interpret(nextCache[3].line[0].data[1]) << ">]\n";
+	cout << "\tEntry 1: [(" << nextCache[3].line[1].valid << ", " << nextCache[3].line[1].dirty << ", "<< nextCache[3].line[1].tag << ")<" << interpret(nextCache[3].line[1].data[0]) << ", " << interpret(nextCache[3].line[1].data[1]) << ">]\n";
+			cin.get();
+			cin.get();
 		}
 		fout.close();
     }
@@ -511,6 +542,7 @@ bool cacheRead(const int& addr, int& data) {
 		if (linePtr->tag == tag) {
 			data = linePtr->data[word];
 			success = true;
+			cout << "Found addr " << addr << " in line " << line << " set 0\n"; 
 		}
 		linePtr = nullptr;
 	}
@@ -519,6 +551,7 @@ bool cacheRead(const int& addr, int& data) {
 		if (linePtr->tag == tag) {
 			data = linePtr->data[word];
 			success = true;
+			cout << "Found addr " << addr << " in line " << line << " set 1\n";
 		}
 		linePtr = nullptr;
 	}
@@ -704,7 +737,7 @@ void status(ofstream& out) {
 	}
 	out << "\n\n";
 
-	cout << "Cache\n";
+	out << "Cache\n";
 	out << "Set 0: LRU=[" << cache[0].LRU << "]\n";
 	out << "\tEntry 0: [(" << cache[0].line[0].valid << ", " << cache[0].line[0].dirty << ", "<< cache[0].line[0].tag << ")<" << interpret(cache[0].line[0].data[0]) << ", " << interpret(cache[0].line[0].data[1]) << ">]\n";
 	out << "\tEntry 1: [(" << cache[0].line[1].valid << ", " << cache[0].line[1].dirty << ", "<< cache[0].line[1].tag << ")<" << interpret(cache[0].line[1].data[0]) << ", " << interpret(cache[0].line[1].data[1]) << ">]\n";
@@ -1088,15 +1121,29 @@ void IF() {
 	int data;
 	bool hit = cacheRead(pc, data);
 
+	cout << pc << hit <<"\n";
 
-	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1)
+
+	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1) {
 		switchp = 1;
+<<<<<<< HEAD
 	else if ( /* next i is NOP or invalid*/ (getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") || !getIsValid(data))
+=======
+		cout << "Miss\n";
+	}
+	else if ( /* next i is NOP */ getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") {
+>>>>>>> 6e5a0b56b30c818c8dd703bd9d0cd3da8d912de6
 		switchp = 2;
-	else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001")
+		cout << "NOP\n";
+	}
+	else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001") {
 		switchp = 3;
-	else  /* i0 is not a branch, NOP, or miss */ 
+		cout << "Jump";
+	}
+	else  /* i0 is not a branch, NOP, or miss */ {
 		switchp = 4;
+		cout << "Alu or Mem\n";
+	}
 
 		
 
