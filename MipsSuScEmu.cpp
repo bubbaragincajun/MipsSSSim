@@ -277,6 +277,36 @@ void MEM() {
 	}
 }
 
+<<<<<<< HEAD
+void Issue() {
+	bool ALUready(false), MEMready(false);
+	int ALUslot(0), MEMslot(0);
+	if (!preAlu[0].valid) {
+		ALUready = true;
+	}
+	else if (!preAlu[1].valid) {
+		ALUready = true;
+		ALUslot = 1;
+	}
+
+	//checks if preMem buffer is able to accept another instruction
+	if (!preMem[0].valid) {
+		Memready = true;
+	}
+	else if (!preMem[1].valid) {
+		MEMready = true;
+		MEMslot = 1;
+	}
+
+	int i = 0;
+	(while (ALUready || MEMready) && i < 4 ) {
+		
+	}
+	
+
+}
+=======
+>>>>>>> dc067a890703e5804d45218eec6bc11ad21c5e63
 bool cacheRead(const int& addr, int& data) {
 	//get offsets for the cache
 
