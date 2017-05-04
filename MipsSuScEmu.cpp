@@ -27,7 +27,7 @@ struct PostBuff {
 
 struct PreBuff {
     bool valid;
-    int instruction;
+    int dest, instruction;
 };
 
 
@@ -47,6 +47,7 @@ PreBuff preAlu[2];
 PreBuff preMem[2];
 PreBuff preIssue[4];
 int sp, pc, memstart, cycle;
+bool breakHit = false;
 
 string mipsReturn(const int& i);
 void disassemble(const string& filename, const string& outfile);
@@ -56,8 +57,12 @@ void showhelpinfo(char* s);
 void writeBack();
 void ALU();
 void ALUIssue(const int& instruction);
+void IF();
+int pibIndex();
+bool buffStall(const int& addr);
+bool cacheRead(const int& addr, int& data);
+bool cacheWrite(const int& addr, const int& data);
 
-//strings or ints???
 string getIsValid(const int& command);
 string getOP(const int& command);
 string getRS(const int& command);
@@ -267,7 +272,6 @@ void MEM() {
 	}
 }
 
-
 bool cacheRead(const int& addr, int& data) {
 
 }
@@ -377,20 +381,19 @@ void status(const int& i, ofstream& out) {
 
 	cout << "Cache\n";
 	out << "Set 0: LRU=[" << cache[0].LRU << "]\n";
-	out << "\tEntry 0: [(" << cache[0].line[0].valid << ", " << cache[0].line[0].dirty << ", "<< cache[0].line[0].tag << ")<" << cache[0].line[0].data[0] << ", " << cache[0].line[0].data[1] << ">]\n";
-	out << "\tEntry 1: [(" << cache[0].line[1].valid << ", " << cache[0].line[1].dirty << ", "<< cache[0].line[1].tag << ")<" << cache[0].line[1].data[0] << ", " << cache[0].line[1].data[1] << ">]\n";
+	out << "\tEntry 0: [(" << cache[0].line[0].valid << ", " << cache[0].line[0].dirty << ", "<< cache[0].line[0].tag << ")<" << interpret(cache[0].line[0].data[0]) << ", " << interpret(cache[0].line[0].data[1]) << ">]\n";
+	out << "\tEntry 1: [(" << cache[0].line[1].valid << ", " << cache[0].line[1].dirty << ", "<< cache[0].line[1].tag << ")<" << interpret(cache[0].line[1].data[0]) << ", " << interpret(cache[0].line[1].data[1]) << ">]\n";
 
 	out << "Set 1: LRU=[" << cache[1].LRU << "]\n";
-	out << "\tEntry 0: [(" << cache[1].line[0].valid << ", " << cache[1].line[0].dirty << ", "<< cache[1].line[0].tag << ")<" << cache[1].line[0].data[0] << ", " << cache[1].line[0].data[1] << ">]\n";
-	out << "\tEntry 1: [(" << cache[1].line[1].valid << ", " << cache[1].line[1].dirty << ", "<< cache[1].line[1].tag << ")<" << cache[1].line[1].data[0] << ", " << cache[1].line[1].data[1] << ">]\n";
-
+	out << "\tEntry 0: [(" << cache[1].line[0].valid << ", " << cache[1].line[0].dirty << ", "<< cache[1].line[0].tag << ")<" << interpret(cache[1].line[0].data[0]) << ", " << interpret(cache[1].line[0].data[1]) << ">]\n";
+	out << "\tEntry 1: [(" << cache[1].line[1].valid << ", " << cache[1].line[1].dirty << ", "<< cache[1].line[1].tag << ")<" << interpret(cache[1].line[1].data[0]) << ", " << interpret(cache[1].line[1].data[1]);
 	out << "Set 2: LRU=[" << cache[2].LRU << "]\n";
-	out << "\tEntry 0: [(" << cache[2].line[0].valid << ", " << cache[2].line[0].dirty << ", "<< cache[2].line[0].tag << ")<" << cache[2].line[0].data[0] << ", " << cache[2].line[0].data[1] << ">]\n";
-	out << "\tEntry 1: [(" << cache[2].line[1].valid << ", " << cache[2].line[1].dirty << ", "<< cache[2].line[1].tag << ")<" << cache[2].line[1].data[0] << ", " << cache[2].line[1].data[1] << ">]\n";
+	out << "\tEntry 0: [(" << cache[2].line[0].valid << ", " << cache[2].line[0].dirty << ", "<< cache[2].line[0].tag << ")<" << interpret(cache[2].line[0].data[0]) << ", " << interpret(cache[2].line[0].data[1]) << ">]\n";
+	out << "\tEntry 1: [(" << cache[2].line[1].valid << ", " << cache[2].line[1].dirty << ", "<< cache[2].line[1].tag << ")<" << interpret(cache[2].line[1].data[0]) << ", " << interpret(cache[2].line[1].data[1]) << ">]\n";
 
 	out << "Set 3: LRU=[" << cache[3].LRU << "]\n";
-	out << "\tEntry 0: [(" << cache[3].line[0].valid << ", " << cache[3].line[0].dirty << ", "<< cache[3].line[0].tag << ")<" << cache[3].line[0].data[0] << ", " << cache[3].line[0].data[1] << ">]\n";
-	out << "\tEntry 1: [(" << cache[3].line[1].valid << ", " << cache[3].line[1].dirty << ", "<< cache[3].line[1].tag << ")<" << cache[3].line[1].data[0] << ", " << cache[3].line[1].data[1] << ">]\n";
+	out << "\tEntry 0: [(" << cache[3].line[0].valid << ", " << cache[3].line[0].dirty << ", "<< cache[3].line[0].tag << ")<" << interpret(cache[3].line[0].data[0]) << ", " << interpret(cache[3].line[0].data[1]) << ">]\n";
+	out << "\tEntry 1: [(" << cache[3].line[1].valid << ", " << cache[3].line[1].dirty << ", "<< cache[3].line[1].tag << ")<" << interpret(cache[3].line[1].data[0]) << ", " << interpret(cache[3].line[1].data[1]) << ">]\n";
 
 	out << "Data:\n";
 	int numData = (sp - memstart)/4;
@@ -698,10 +701,239 @@ string getFUNC(const int& command) {
 	return func.to_string();
 }
 
+int pibIndex() /* returns highest open slot */ {
+	for(int i = 0; i < 4; i++) {
+		if ( preIssue[i].valid == false ) 
+			return i;
+	}
+	
+	return -1;
+}
+
+bool buffStall(const int& addr) {
+	bool shouldStall = false;
+
+	//pre-Issue
+	for(int i = 0; i < 4; i++) {
+		if ( preIssue[i].dest == addr )
+			shouldStall = true;
+	}
+
+	//pre-MEM
+	for(int i = 0; i < 2; i++) {
+		if ( preMem[i].dest == addr )
+			shouldStall = true;	
+	}
+
+	//post-MEM
+	for(int i = 0; i < 1; i++) {
+		if ( postMem.dest == addr )
+			shouldStall = true;	
+	}
+
+	//pre-ALU
+	for(int i = 0; i < 2; i++) {
+		if ( preAlu[i].dest == addr )
+			shouldStall = true;	
+	}
+
+	//post-ALU
+	for(int i = 0; i < 1; i++) {
+		if ( postAlu.dest == addr )
+			shouldStall = true;	
+	}
+
+	return shouldStall;
+}
+
 void showhelpinfo(char *s) {
   cout<<"Usage:   "<<s<<" [-option] [argument]"<<endl;
   cout<<"option:  "<<"-h  show help information"<<endl;
   cout<<"         "<<"-i  input file name"<<endl;
   cout<<"         "<<"-o  output file name"<<endl;
   cout<<"example: "<<s<<" -i <input file name> -o <output file prefix>"<<endl;
+}
+
+void IF() { 
+	int switchp;
+	int data;
+
+	if ( breakHit == true )
+		switchp = 0;
+	else if ( /* next cache misses */ !cacheRead(pc, data) || /* PIB is full */ pibIndex() == -1)
+		switchp = 1;
+	else if ( /* next i is NOP */ getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000")
+		switchp = 2;
+	else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001")
+		switchp = 3;
+	else  /* i0 is not a branch, NOP, or miss */ 
+		switchp = 4;
+
+		
+
+	switch (switchp) {
+		case 0: /* stall since break was read.  IF is no longer used */ 
+			return;
+		break;
+
+		case 1: /* cache miss or full PIB.  Has to wait  */
+			return;
+		break;
+
+		case 2:/* instruction is a NOP */
+			//fetch, but no PIB push.  Handle completely here.
+			pc += 4;
+		break;
+
+		case 3:/* instuction is a Branch */ /* prebuff.dest???? */
+			//J
+			if ( getOP(data) == "00010" ) {
+				int addr = data << 6;
+				addr >>= 4;
+				pc = addr;
+			}
+
+			//JR
+			if ( getOP(data) == "00000" && getFUNC(data) == "001000" ) {
+				string opstring = getOP(data);
+				string jump = opstring.substr(6,5);				
+				bitset<5> reg(jump);
+				int addr = (int)(reg.to_ulong());
+
+				//r[addr] reg check fails, stall
+				if ( buffStall(r[addr]) ) {
+					break;
+				}
+
+				pc = r[addr];
+			}
+
+			//BEQ
+			if ( getOP(data) == "00100" ) {
+				string opstring = getOP(data);
+				bitset<5> rs(opstring.substr(6,5));
+				bitset<5> rt(opstring.substr(11,5));
+				int reg1 = (int)(rs.to_ulong());
+				int reg2 = (int)(rt.to_ulong());
+				int next = pc+4;
+				if (r[reg1]==r[reg2]) {	
+					next = data << 16;
+					next =  next >> 14;
+					next = pc + next + 4;
+				}
+
+				//r[reg1] & r[reg2] reg check fails, stall
+				if ( buffStall(r[reg1]) || buffStall(r[reg2]) ){
+					break;
+				}
+
+				pc = next;
+			}
+
+			//BLTZ
+			if ( getOP(data) == "00001" ) {
+				string opstring = getOP(data);
+				bitset<5> rs(opstring.substr(6,5));
+				int s = data << 6;
+				s = s >> 27;
+				int next = pc+4;
+				if (r[s] < 0 ) {		
+					next = data << 16;
+					next = next >> 14;
+					next = pc + next + 4;
+				}
+
+				//r[s] reg check fails, stall
+				if ( buffStall(r[s]) ) {
+					break;
+				}
+
+				pc = next;
+			}
+		break; 
+
+		case 4:/* instruction is normal instruction */
+			//push i0 into highest PIB slot. set values
+			preIssue[pibIndex()].instruction = data;
+			preIssue[pibIndex()].valid = true;
+			pc += 4;
+
+			if ( /* PIB has space for another instruction */ pibIndex() != -1 ) {
+				//push i1 into highest PIB slot.  handle if it's a branch instruction
+				if (cacheRead(pc, data)) {
+					//if branch instruction is pulled
+					if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001") {
+						//J
+						if ( getOP(data) == "00010" ) {
+							int addr = data << 6;
+							addr >>= 4;
+							pc = addr;
+						}
+
+						//JR
+						if ( getOP(data) == "00000" && getFUNC(data) == "001000" ) {
+							string opstring = getOP(data);
+							string jump = opstring.substr(6,5);				
+							bitset<5> reg(jump);
+							int addr = (int)(reg.to_ulong());
+
+							//r[addr] reg check fails, stall
+							if ( buffStall(r[addr]) ) {
+								break;
+							}
+
+							pc = r[addr];
+						}
+
+						//BEQ
+						if ( getOP(data) == "00100" ) {
+							string opstring = getOP(data);
+							bitset<5> rs(opstring.substr(6,5));
+							bitset<5> rt(opstring.substr(11,5));
+							int reg1 = (int)(rs.to_ulong());
+							int reg2 = (int)(rt.to_ulong());
+							int next = pc+4;
+							if (r[reg1]==r[reg2]) {	
+								next = data << 16;
+								next =  next >> 14;
+								next = pc + next + 4;
+							}
+
+							//r[reg1] & r[reg2] reg check fails, stall
+							if ( buffStall(r[reg1]) || buffStall(r[reg2]) ){
+								break;
+							}
+
+							pc = next;
+						}
+
+						//BLTZ
+						if ( getOP(data) == "00001" ) {
+							string opstring = getOP(data);
+							bitset<5> rs(opstring.substr(6,5));
+							int s = data << 6;
+							s = s >> 27;
+							int next = pc+4;
+							if (r[s] < 0 ) {		
+								next = data << 16;
+								next = next >> 14;
+								next = pc + next + 4;
+							}
+
+							//r[s] reg check fails, stall
+							if ( buffStall(r[s]) ) {
+								break;
+							}
+
+							pc = next;
+						}
+					} else {
+						preIssue[pibIndex()].instruction = data;
+						preIssue[pibIndex()].valid = true;
+					}
+				}
+			}
+		break;
+		
+	}
 }
