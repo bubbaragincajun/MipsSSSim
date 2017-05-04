@@ -1136,9 +1136,13 @@ void IF() {
 
 	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1) {
 		switchp = 1;
+<<<<<<< HEAD
+	else if ( /* next i is NOP or invalid*/ (getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") || !getIsValid(data))
+=======
 		cout << "Miss\n";
 	}
 	else if ( /* next i is NOP */ getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") {
+>>>>>>> 6e5a0b56b30c818c8dd703bd9d0cd3da8d912de6
 		switchp = 2;
 		cout << "NOP\n";
 	}
@@ -1154,10 +1158,6 @@ void IF() {
 		
 
 	switch (switchp) {
-		case 0: /* stall since break was read.  IF is no longer used */ 
-			return;
-		break;
-
 		case 1: /* cache miss or full PIB.  Has to wait  */
 			return;
 		break;
