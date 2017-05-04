@@ -122,6 +122,10 @@ int main(int argc, char* argv[]) {
 		disassemble(infile,outfile);
 
 		//eventually putting the guts of the sim here
+		outfile = outfile + "_sim.txt";
+		ofstream fout(outfile.c_str());
+		cycle = 1;
+
 		while (!breakHit || buffFull) {
 			writeBack();
 			MEM();
@@ -132,12 +136,10 @@ int main(int argc, char* argv[]) {
 				IF();
 			}
 
-			status(out);
+			status(fout);
 		}
-
-		outfile = outfile + "_sim.txt";
+		fout.close();
     }
-
     return 0;
 }
 
@@ -900,7 +902,7 @@ bool buffStall(const int& addr) {
 }
 
 bool buffFull () {
-	return (preIssue[0].valid || preMEM[0].valid || preALU[0].valid || postMem.valid || postAlu.valid);
+	return (preIssue[0].valid || preMem[0].valid || preAlu[0].valid || postMem.valid || postAlu.valid);
 }
 
 void showhelpinfo(char *s) {
