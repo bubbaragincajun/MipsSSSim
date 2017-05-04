@@ -27,7 +27,11 @@ struct PostBuff {
 
 struct PreBuff {
     bool valid;
+<<<<<<< HEAD
     int dest, instruction;
+=======
+    int instruction, dest;
+>>>>>>> 344f82afae5c41d47bd25d3b19de20508cf3f065
 };
 
 
@@ -41,6 +45,7 @@ struct PreBuff {
 int memarray[100];
 int r[32];
 CacheSet cache[4];
+CacheSet nextCache[4];
 PostBuff postAlu;
 PostBuff postMem;
 PreBuff preAlu[2];
@@ -57,11 +62,18 @@ void showhelpinfo(char* s);
 void writeBack();
 void ALU();
 void ALUIssue(const int& instruction);
+<<<<<<< HEAD
 void IF();
 int pibIndex();
 bool buffStall(const int& addr);
 bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
+=======
+void MEM();
+bool cacheRead(const int& addr, int& data);
+bool cacheWrite(const int& addr, const int& data);
+
+>>>>>>> 344f82afae5c41d47bd25d3b19de20508cf3f065
 
 string getIsValid(const int& command);
 string getOP(const int& command);
@@ -237,14 +249,14 @@ void MEM() {
 		command = preMem[0].instruction;
 		op = command << 1;
 		op >>= 27;
-		rs = instruction << 6;
+		rs = command << 6;
     	rs >>= 27;
-    	rt = instruction << 11;
+    	rt = command << 11;
     	rt >>= 27; 
-		imm = instruction << 16;
+		imm = command << 16;
    		imm >>= 14;
 		addr = imm + r[rs];
-		if (op == 3) {
+		if (op == 3) { //LW
 			if(cacheRead(addr, data)) {
 				postMem.valid = true;
 				postMem.data = data;
@@ -253,31 +265,137 @@ void MEM() {
 				preMem[0] = preMem[1];
 				preMem[1].valid = false;
 				preMem[1].instruction = 0;
+				preMem[1].dest = 0;
 			}
 		}
-		else {
+		else { //SW
 			if (cacheWrite(addr, r[rt])) {
 				preMem[0] = preMem[1];
 				preMem[1].valid = false;
-				preMem[1].instruction = 0;
+				preMem[1].instruction = 0;				
+				preMem[1].dest = 0;
 			}
-		}
-
-		
+		}		
 	}
-	else {
+	else { //nothing in the first slot(i.e nothing in the second slot)
 		preMem[0] = preMem[1];
 		preMem[1].valid = false;
 		preMem[1].instruction = 0;
+		preMem[1].dest = 0;
 	}
 }
 
 bool cacheRead(const int& addr, int& data) {
+	//get offsets for the cache
 
+	int tag, word, line;
+
+	tag = addr >> 6;
+	word = addr << 28;
+	word = word >> 30;
+	line = addr << 26;
+	line = line >> 30;
+
+	bool success = false;
+	CacheSet* cachePtr = &cache[line];
+
+	if (cachePtr->line[0].valid) { //checking if in set 0
+		CacheLine* linePtr = &cachePtr->line[0];
+		if (linePtr->tag == tag) {
+			data = linePtr->data[word];
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else if(cachePtr->line[1].valid) { //checking if in set 1
+		CacheLine* linePtr = &cachePtr->line[1];
+		if (linePtr->tag == tag) {
+			data = linePtr->data[word];
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else {
+		cachePtr = &nextCache[line];
+		int set = cachePtr->LRU? 1: 0;
+		CacheLine* linePtr = &cachePtr->line[set];
+		linePtr->valid = true;
+		linePtr->dirty = false;
+		int index1, index2;
+		if (word == 0) {
+			index1 = (addr-96)/4;
+			index2 = (addr-92)/4;
+		}
+		else {
+			index1 = (addr-100)/4;
+			index2 = (addr-96)/4;
+		}
+		linePtr->data[0] = memarray[index1];
+		linePtr->data[1] = memarray[index2];
+		cachePtr->LRU = !cachePtr->LRU;
+
+		linePtr = nullptr;
+		success = false;
+	}
+
+	cachePtr = nullptr;
+	return success;
 }
 
 bool cacheWrite(const int& addr, const int& data) {
+	int tag, word, line;
 
+	tag = addr >> 6;
+	word = addr << 28;
+	word = word >> 30;
+	line = addr << 26;
+	line = line >> 30;
+
+	bool success = false;
+	CacheSet* cachePtr = &cache[line];
+
+	if (cachePtr->line[0].valid) { //checking if in set 0
+		CacheLine* linePtr = &cachePtr->line[0];
+		if (linePtr->tag == tag) {
+			linePtr->data[word] = data;
+			linePtr->dirty = true;
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else if(cachePtr->line[1].valid) { //checking if in set 1
+		CacheLine* linePtr = &cachePtr->line[1];
+		if (linePtr->tag == tag) {
+			linePtr->data[word] = data;
+			linePtr->dirty = true;
+			success = true;
+		}
+		linePtr = nullptr;
+	}
+	else {
+		cachePtr = &nextCache[line];
+		int set = cachePtr->LRU? 1: 0;
+		CacheLine* linePtr = &cachePtr->line[set];
+		linePtr->valid = true;
+		linePtr->dirty = false;
+		int index1, index2;
+		if (word == 0) {
+			index1 = (addr-96)/4;
+			index2 = (addr-92)/4;
+		}
+		else {
+			index1 = (addr-100)/4;
+			index2 = (addr-96)/4;
+		}
+		linePtr->data[0] = memarray[index1];
+		linePtr->data[1] = memarray[index2];
+		cachePtr->LRU = !cachePtr->LRU;
+
+		linePtr = nullptr;
+		success = false;
+	}
+	cachePtr = nullptr;
+	return success;
 }
 
 //should be able to use as is
