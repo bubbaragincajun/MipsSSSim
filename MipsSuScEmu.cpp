@@ -53,7 +53,7 @@ bool breakHit = false;
 string mipsReturn(const int& i);
 void disassemble(const string& filename, const string& outfile);
 string interpret(const int& i);
-void status(const int& i, ofstream& out);
+void status(ofstream& out);
 void showhelpinfo(char* s);
 void writeBack();
 void ALU();
@@ -61,6 +61,7 @@ void ALUIssue(const int& instruction);
 void IF();
 int pibIndex();
 bool buffStall(const int& addr);
+bool buffFull ();
 bool cacheRead(const int& addr, int& data);
 bool cacheWrite(const int& addr, const int& data);
 void MEM();
@@ -119,7 +120,21 @@ int main(int argc, char* argv[]) {
 	else {
 		//build the virtual memory and print out the disassembled code (using interpret)
 		disassemble(infile,outfile);
+
 		//eventually putting the guts of the sim here
+		while (!breakHit || buffFull) {
+			writeBack();
+			MEM();
+			ALU();
+			Issue();
+
+			if( !breakHit ) {
+				IF();
+			}
+
+			status(out);
+		}
+
 		outfile = outfile + "_sim.txt";
     }
 
@@ -277,7 +292,6 @@ void MEM() {
 	}
 }
 
-<<<<<<< HEAD
 void Issue() {
 	bool ALUready(false), MEMready(false);
 	int ALUslot(0), MEMslot(0);
@@ -305,8 +319,7 @@ void Issue() {
 	
 
 }
-=======
->>>>>>> dc067a890703e5804d45218eec6bc11ad21c5e63
+
 bool cacheRead(const int& addr, int& data) {
 	//get offsets for the cache
 
@@ -479,7 +492,7 @@ string interpret(const int& i) {
 }
 
 //edit this to match the output for the current project
-void status(const int& i, ofstream& out) {
+void status(ofstream& out) {
 	out << "--------------------\n";
 	out << "Cycle[" << cycle << "]:\n\n";
 
@@ -886,6 +899,10 @@ bool buffStall(const int& addr) {
 	return shouldStall;
 }
 
+bool buffFull () {
+	return (preIssue[0].valid || preMEM[0].valid || preALU[0].valid || postMem.valid || postAlu.valid);
+}
+
 void showhelpinfo(char *s) {
   cout<<"Usage:   "<<s<<" [-option] [argument]"<<endl;
   cout<<"option:  "<<"-h  show help information"<<endl;
@@ -897,10 +914,10 @@ void showhelpinfo(char *s) {
 void IF() { 
 	int switchp;
 	int data;
+	bool hit = cacheRead(pc, data);
 
-	if ( breakHit == true )
-		switchp = 0;
-	else if ( /* next cache misses */ !cacheRead(pc, data) || /* PIB is full */ pibIndex() == -1)
+
+	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1)
 		switchp = 1;
 	else if ( /* next i is NOP */ getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000")
 		switchp = 2;
