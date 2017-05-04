@@ -27,7 +27,6 @@ struct PostBuff {
 
 struct PreBuff {
     bool valid;
-    int dest, instruction;
     int instruction, dest;
 };
 
