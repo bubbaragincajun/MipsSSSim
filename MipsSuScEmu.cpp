@@ -131,16 +131,17 @@ int main(int argc, char* argv[]) {
 		cycle = 1;
 
 		while (!breakHit || buffFull) {
-			writeBack();
-			MEM();
-			ALU();
-			Issue();
+			// writeBack();
+			// MEM();
+			// ALU();
+			// Issue();
 
-			if( !breakHit ) {
-				IF();
-			}
-
-			status(fout);
+			// if( !breakHit ) {
+			// 	IF();
+			// }
+			int data(0);
+			cout << cacheRead(96, data) ;
+			// status(fout);
 			for (int i = 0; i < 4; i++) {
 				cache[i].LRU = nextCache[i].LRU;
 				for (int j = 0; j < 2; j++) {
@@ -524,6 +525,7 @@ bool checkHazards(const int& index, const int& numReg, int* reg) {
 }
 
 bool cacheRead(const int& addr, int& data) {
+	cout << "Cache Write\n";
 	//get offsets for the cache
 
 	int tag, word, line;
@@ -545,6 +547,7 @@ bool cacheRead(const int& addr, int& data) {
 			cout << "Found addr " << addr << " in line " << line << " set 0\n"; 
 		}
 		linePtr = nullptr;
+		cachePtr = nullptr;
 	}
 	else if(cachePtr->line[1].valid) { //checking if in set 1
 		CacheLine* linePtr = &cachePtr->line[1];
@@ -554,6 +557,7 @@ bool cacheRead(const int& addr, int& data) {
 			cout << "Found addr " << addr << " in line " << line << " set 1\n";
 		}
 		linePtr = nullptr;
+		cachePtr = nullptr;
 	}
 	else {
 		cachePtr = &nextCache[line];
@@ -561,6 +565,7 @@ bool cacheRead(const int& addr, int& data) {
 		CacheLine* linePtr = &cachePtr->line[set];
 		linePtr->valid = true;
 		linePtr->dirty = false;
+		linePtr->tag = tag;
 		int index1, index2;
 		if (word == 0) {
 			index1 = (addr-96)/4;
@@ -572,13 +577,18 @@ bool cacheRead(const int& addr, int& data) {
 		}
 		linePtr->data[0] = memarray[index1];
 		linePtr->data[1] = memarray[index2];
-		cachePtr->LRU = !cachePtr->LRU;
+
+		cout << "addres1: " << index1 << " address2: " << index2 << "\n";
+		cout << "word1: " << linePtr->data[0] << " word2: " << linePtr->data[1] << "\n";
+		cachePtr->LRU = cachePtr->LRU? false: true;
 
 		linePtr = nullptr;
 		success = false;
+		cachePtr = nullptr;
+
+		cout << "Wrote to new cache\n";
 	}
 
-	cachePtr = nullptr;
 	return success;
 }
 
