@@ -141,7 +141,6 @@ int main(int argc, char* argv[]) {
 		preMem[0].valid = preMem[1].valid = false;
 		postAlu.valid = postMem.valid = false;
 		while (!breakHit || buffFull()) {
-			cout << "Start of cycle: " << cycle << "\n";
 			writeBack();
 			MEM();
 			ALU();
@@ -164,12 +163,9 @@ int main(int argc, char* argv[]) {
 					}
 				}
 			}
-			cout << "End of cycle: " << cycle << "\n";
 			if(!breakHit || buffFull()) {
 				cycle++;
 			}
-			cout << "breakhit: " << breakHit << " buffFull: " << buffFull() << "\n";
-			cin.get();
 		}
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 2; j++) {
@@ -179,8 +175,6 @@ int main(int argc, char* argv[]) {
 					string address = tag.to_string() + index.to_string() + "000";
 					bitset<32> bitAddr(address);
 					int addr = (int)bitAddr.to_ulong();
-					cout << addr << "\n";
-					cin.get();
 					memarray[(addr-96)/4] = cache[i].line[j].data[0];
 					memarray[(addr-92)/4] = cache[i].line[j].data[1];
 					cache[i].line[j].dirty = false;
@@ -194,12 +188,9 @@ int main(int argc, char* argv[]) {
 }
 
 void writeBack() {
-	cout << "Write Back Cycle: " << cycle<< "\n";
     //check if post alu buffer is ready to write back
     if (postAlu.valid) {
         r[postAlu.dest] = postAlu.data;
-
-		cout << "Post Alu wrote " << postAlu.data << " to $R" << postAlu.dest << "\n";
         postAlu.valid = false;
         postAlu.dest = 0;
         postAlu.data = 0;
@@ -208,7 +199,6 @@ void writeBack() {
     //check if post mem buffer is ready to write back
     if (postMem.valid) {
         r[postMem.dest] = postMem.data;
-		cout << "PostMem wrote " << postMem.data << " to $R" << postMem.dest << "\n";
         postMem.valid = false;
         postMem.dest = 0;
         postMem.data = 0;
@@ -217,7 +207,6 @@ void writeBack() {
 }
 
 void ALU() {
-	cout << "ALU Cycle: " << cycle << "\n"; 
     //checks if there is an instruction ready in the first buffer slot
     if (preAlu[0].valid) {
         ALUIssue(preAlu[0].instruction);
@@ -309,7 +298,6 @@ void ALUIssue(const int& instruction) {
 }
 
 void MEM() {
-	cout << "MEM Cycle: " << cycle << "\n";
 	if (preMem[0].valid) {
 		unsigned int command, op, rs, rt, imm, addr;
 		int data(0);
@@ -323,7 +311,6 @@ void MEM() {
 		imm = command << 16;
    		imm >>= 16;
 		addr = imm + r[rs];
-		cout << "op: " << op << " rs: " << rs << " rt: " << rt << " imm: " << imm << " addr: " << addr << "\n";
 		if (op == 3) { //LW
 			if(cacheRead(addr, data)) {
 				postMem.valid = true;
@@ -358,7 +345,6 @@ void MEM() {
 }
 
 void Issue() {
-	cout << "Issue Cycle: " << cycle << "\n";
 	bool ALUready(false), MEMready(false);
 	int ALUslot(0), MEMslot(0);
 	if (!preAlu[0].valid) {
@@ -381,11 +367,8 @@ void Issue() {
 	int top = pibIndex();
 	int i = 0;
 
-	cout << "ALU ready: " << ALUready << " MEM ready: " << MEMready << " ALUslot: " << ALUslot << " MEMslot: " << MEMslot <<"\n";
-	cout << top << "\n";
 	if (top != 0) {
 		while ((ALUready || MEMready) && i < 4 && preIssue[i].valid ) {
-			cin.get();
 			int command = preIssue[i].instruction;
 			string op = getOP(command);
 			string rs = getRS(command);
@@ -396,9 +379,7 @@ void Issue() {
 			string imm = getIMM(command);
 
 			bitset<5> s(rs), t(rt), d(rd);
-
-			cout << "index: " << i << " valid: " << preIssue[i].valid << " instruction: " << mipsReturn(command) << "\n";
-			cout << "op: " << op << " rs: " << rs << " rt: " << rt << " rd: " << rd << " shift: " << shift << " func: " << func << "\n";
+			
 			//Mem instruction
 			if (op == "01011") {//sw
 				int reg[2] = {(int)s.to_ulong(), (int)t.to_ulong()};
@@ -406,9 +387,7 @@ void Issue() {
 					preMem[MEMslot] = preIssue[i];
 					preIssueShift(i);
 					MEMready = false;
-					cout << "sw shifted\n";
 				} else {
-					cout << "sw not issued\n";
 					i++;
 				}
 			}
@@ -418,9 +397,7 @@ void Issue() {
 					preMem[MEMslot] = preIssue[i];
 					preIssueShift(i);
 					MEMready = false;
-					cout << "lw shifted\n";
 				} else {
-					cout << "lw not issued\n";
 					i++;
 				}				
 			}
@@ -430,7 +407,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "add shifted\n";
 				}
 				else {
 					i++;
@@ -442,7 +418,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "addi shifted\n";
 				}
 				else {
 					i++;
@@ -454,7 +429,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "sub shifted\n";
 				}
 				else {
 					i++;
@@ -466,7 +440,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "sll shifted\n";
 				}
 				else {
 					i++;
@@ -478,8 +451,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-
-					cout << "srl shifted\n";
 				}
 				else {
 					i++;
@@ -491,7 +462,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "mul shifted\n";
 				}
 				else {
 					i++;
@@ -503,7 +473,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "and shifted\n";
 				}
 				else {
 					i++;
@@ -515,7 +484,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "or shifted\n";
 				}
 				else {
 					i++;
@@ -527,7 +495,6 @@ void Issue() {
 					preAlu[ALUslot] = preIssue[i];
 					preIssueShift(i);
 					ALUready = false;
-					cout << "movz shifted\n";
 				}
 				else {
 					i++;
@@ -546,11 +513,6 @@ void preIssueShift(const int& index) {
 	preIssue[3].valid = false;
 	preIssue[3].instruction = 0;
 	preIssue[3].dest = 0;
-
-	cout << "\tEntry 0:\t" << ((preIssue[0].valid)? ("[" + mipsReturn(preIssue[0].instruction) + "]") : "") << "\n";
-	cout << "\tEntry 1:\t" << ((preIssue[1].valid)? ("[" + mipsReturn(preIssue[1].instruction) + "]") : "") << "\n";
-	cout << "\tEntry 2:\t" << ((preIssue[2].valid)? ("[" + mipsReturn(preIssue[2].instruction) + "]") : "") << "\n";
-	cout << "\tEntry 3:\t" << ((preIssue[3].valid)? ("[" + mipsReturn(preIssue[3].instruction) + "]") : "") << "\n";
 }
 
 bool checkHazards(const int& index, const int& numReg, int* reg) {
@@ -582,7 +544,6 @@ bool checkHazards(const int& index, const int& numReg, int* reg) {
 }
 
 bool cacheRead(const int& addr, int& data) {
-	cout << "Cache Read\n";
 	//get offsets for the cache
 
 	unsigned int tag, word, line;
@@ -593,8 +554,6 @@ bool cacheRead(const int& addr, int& data) {
 	line = addr << 27;
 	line = line >> 30;
 
-	cout << "tag: " << tag << " index: " << line << " word: " << word << " lru: " << cache[line].LRU<<'\n';
-
 	bool success = false;
 	CacheSet* cachePtr = &cache[line];
 
@@ -603,7 +562,6 @@ bool cacheRead(const int& addr, int& data) {
 		if (linePtr->tag == tag) {
 			data = linePtr->data[word];
 			success = true;
-			cout << "Found addr " << addr << " in line " << line << " set 0\n"; 
 		}
 		linePtr = nullptr;
 	}
@@ -612,7 +570,6 @@ bool cacheRead(const int& addr, int& data) {
 		if (linePtr->tag == tag) {
 			data = linePtr->data[word];
 			success = true;
-			cout << "Found addr " << addr << " in line " << line << " set 1\n";
 		}
 		linePtr = nullptr;
 	}
@@ -639,15 +596,12 @@ bool cacheRead(const int& addr, int& data) {
 		
 		linePtr = nullptr;
 		success = false;
-
-		cout << "Wrote to new cache\n";
 	}
 	cachePtr = nullptr;
 	return success;
 }
 
 bool cacheWrite(const int& addr, const int& data) {
-	cout << "cacheWrite\n";
 	unsigned int tag, word, line;
 
 	tag = addr >> 5;
@@ -656,7 +610,6 @@ bool cacheWrite(const int& addr, const int& data) {
 	line = addr << 27;
 	line = line >> 30;
 
-	cout << "tag: " << tag << " index: " << line << " word: " << word << " lru: " << cache[line].LRU<<'\n';
 
 	bool success = false;
 	CacheSet* cachePtr = &cache[line];
@@ -664,7 +617,6 @@ bool cacheWrite(const int& addr, const int& data) {
 	if (cachePtr->line[0].valid) { //checking if in set 0
 		CacheLine* linePtr = &cachePtr->line[0];
 		if (linePtr->tag == tag) {
-			cout << "Found addr " << addr << " in line " << line << " set 0\n";
 			linePtr->data[word] = data;
 			linePtr->dirty = true;
 			CacheLine* nextCacheLine = &nextCache[line].line[0];	
@@ -678,7 +630,6 @@ bool cacheWrite(const int& addr, const int& data) {
 	if(cachePtr->line[1].valid && !success) { //checking if in set 1
 		CacheLine* linePtr = &cachePtr->line[1];
 		if (linePtr->tag == tag) {
-			cout << "Found addr " << addr << " in line " << line << " set 1\n";
 			linePtr->data[word] = data;
 			linePtr->dirty = true;
 			CacheLine* nextCacheLine = &nextCache[line].line[1];	
@@ -711,7 +662,6 @@ bool cacheWrite(const int& addr, const int& data) {
 
 		linePtr = nullptr;
 		success = false;
-		cout << "Wrote to new cache\n";
 	}
 	cachePtr = nullptr;
 	return success;
@@ -838,7 +788,6 @@ void status(ofstream& out) {
 	int lines = numData/8;	
 	int offset = memstart;
 
-	cout << numData << " " << lines << " " << offset << "\n";
 	for (int i = 0; i < lines; i++) {
 		out << offset << ": ";
 		for (int j = (offset-96)/4; j < (offset-96)/4 + 8; j++) {
@@ -1244,7 +1193,6 @@ void showhelpinfo(char *s) {
 }
 
 void IF() { 
-	cout << "IF Cycle: " << cycle << "\n";
 	int switchp;
 	int data;
 	bool hit = cacheRead(pc, data);
@@ -1254,23 +1202,18 @@ void IF() {
 
 	if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1) {
 		switchp = 1;
-		cout << "Miss\n";
 	}
 	else if ( /* next i is NOP or invalid*/ (getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") || getIsValid(data)!= "1") {
 		switchp = 2;
-		cout << "NOP or invalid\n";
 	}
 	else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001") {
 		switchp = 3;
-		cout << "Jump";
 	}
 	else if (/*i is a break*/(getOP(data) == "00000") && (getFUNC(data) == "001101")) {
 		switchp = 4;
-		cout << "break\n";
 	}
 	else {  /* i0 is not a branch, break, NOP, or miss */
 		switchp = 5;
-		cout << "Alu or Mem\n";
 	}
 
 		
@@ -1372,23 +1315,18 @@ void IF() {
 				hit = cacheRead(pc, data);
 				if ( /* next cache misses */ !hit || /* PIB is full */ pibIndex() == -1) {
 					switchp = 1;
-					cout << "Miss\n";
 				}
 				else if ( /* next i is NOP or invalid*/ (getOP(data) == "00000" && getTAR(data) == "00000000000000000000000000") || getIsValid(data)!= "1") {
 					switchp = 2;
-					cout << "NOP or invalid\n";
 				}
 				else if ( /* i0 is a branch J / JR / BEQ / BLTZ*/ getOP(data) == "00010" || (getOP(data) == "00000" && getFUNC(data) == "001000") || getOP(data) == "00100" || getOP(data) == "00001") {
 					switchp = 3;
-					cout << "Jump";
 				}
 				else if (/*i is a break*/getOP(data) == "00000" && getFUNC(data) == "001101") {
 					switchp = 4;
-					cout << "break\n";
 				}
 				else  /* i0 is not a branch, NOP, or miss */ {
 					switchp = 5;
-					cout << "Alu or Mem\n";
 				}
 
 					
