@@ -28,5 +28,5 @@ register.
 ******************************************************************************
 ******************************************************************************
 MipsSuScEmu.cpp
-makefile
-README.txt(this thing you're looking at now)
+Makefile
+README(this thing you're looking at now)
